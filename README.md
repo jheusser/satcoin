@@ -34,7 +34,7 @@ By default the range of the nonce is between 0 and 10, thus it will be unsatisfi
 An unsatisfiable instance means there is no nonce that will satisfy the mining criteria.
 
 ```
-cbmc -DCBMC satcoin.c
+$ cbmc -DCBMC satcoin.c
 CBMC version 5.8 64-bit x86_64 macos
 Parsing satcoin.c
 Converting
