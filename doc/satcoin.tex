@@ -1,0 +1,106 @@
+\documentclass[conference]{IEEEtran}
+% packages
+\usepackage{xspace}
+\usepackage{hyperref}
+\usepackage{todonotes}
+\usepackage{tikz}
+\usepackage[utf8]{inputenc}
+
+%  commands
+% \newcommand{\todo}[1]{$\langle\!\langle$\marginpar[\raggedleft$\triangleright\triangleright\triangleright$]{$\triangleleft\triangleleft\triangleleft$}\textsf{#1}$\rangle\!\rangle$}
+\def\CC{{C\nolinebreak[4]\hspace{-.05em}\raisebox{.4ex}{\tiny\bf ++}}}
+\def\ea{\,et\,al.\ }
+
+\begin{document}
+	
+% paper title
+\title{SATcoin -- Bitcoin mining via SAT}
+
+% author names and affiliations
+% use a multiple column layout for up to three different
+% affiliations
+\author{
+\IEEEauthorblockN{Norbert Manthey}
+\IEEEauthorblockA{nmanthey@conp-solutions.com\\Dresden, Germany}
+\and
+\IEEEauthorblockN{Jonathan Heusser}
+\IEEEauthorblockA{jonathan.heusser@gmail.com\\London, England}
+}
+
+\maketitle
+
+\def\minisat{\textsc{Minisat~2.2}\xspace}
+\def\cbmc{\textsc{CBMC}\xspace}
+
+% the abstract is optional
+\begin{abstract}
+The main security properties of Bitcoin, censorship resistance and an immutable historical ledger of transactions is enforced by its mining algorithm.
+By design this "proof of work" requires a large amount of computational power to verify transactions.
+While current mining algorithms are based on brute force, this document briefly describes how the same problem can be solved via SAT.
+Most details of this document are taken from~\cite{satcoin-online-article}.
+\end{abstract}
+
+\section{Bitcoin Mining}
+
+A Bitcoin mining program essentially performs the following (in pseudo-code):
+
+\begin{verbatim}
+nonce = MIN
+while(nonce < MAX):
+  if sha(sha(block+nonce)) < target:
+     return nonce
+  nonce += 1
+\end{verbatim}
+
+The task is to find a nonce which, as part of the bitcoin block header, hashes below a certain value.
+
+This is a brute force approach to something like a preimage attack on SHA-256.
+The process of mining consists of finding an input to a cryptographic hash function which hashes below or equal to a fixed target value.
+At every iteration the content to be hashed is slightly changed to find a valid hash; there's no smart choice in the nonce.
+The choice is essentially random as this is the best one can do on such hash functions.
+
+In~\cite{satcoin-online-article}, Heusser proposed an alternative mining algorithm which does not perform a brute force search.
+Instead, we utilize tools from the program verification domain to find bugs or prove properties of programs, see as example~\cite{Heusser:2010:QIL:1920261.1920300}.
+To find the correct nonce or prove the absence of a valid nonce, a model checker backed by a SAT solver is used on a C implementation of the hashing.
+In contrast to brute force, which actually executes and computes many hashes, the new approach is symbolically executing the hash function with
+added constraints that are inherent in the bitcoin mining process.
+The submitted benchmark is based on CNFs created by CBMC.
+    
+\section{Bitcoin mining using SAT Solving and Model Checking}
+
+We take an existing C implementation of SHA-256 from a mining program and strip away everything but the actual hash function and the basic mining procedure of sha(sha(block)).
+This C file is the input to CBMC~\cite{DBLP:conf/tacas/KroeningT14}.
+
+By adding the right assumptions and assertions to the implementation, i.e. MIN and MAX in the pseudo code above, we direct the SAT solver to find a nonce.
+Instead of a loop which executes the hash many times and a procedure which checks if we computed a correct hash,
+we add constraints that when satisfied implicitly have the correct nonce in its solution.
+
+The assumptions and assertions can be broken down to the following ideas:
+% 
+\begin{itemize}
+ \item The nonce is modelled as a non-deterministic value
+ \item The known structure of a valid hash, i.e. leading zeros, is encoded as assumptions in the model checker
+ \item An assertion is added stating that a valid nonce does not exist 
+\end{itemize}
+% 
+More details about the translation, and a basic solver preformance comparison can be found in the full article~\cite{satcoin-online-article}.
+
+\section{SAT Competition Specifics}
+
+The used input file for CBMC implements the described analysis, and uses the so called \emph{genesis block} of the bitcoin blockchain, the very first block of the chain.
+We provide a script that allows to produce a CNF based on the fact whether the formula should be satisfiable, or unsatisfiable.
+The formula is satisfiable, if the valid nonce is part of the given range.
+Hence, the range is constructed such that the valid nonce is right in the middle of the range to be analyzed.
+For unsatisfiable formulas, the range starts right after the valid nonce.
+
+The code, as well as all scripts to create a benchmark are available at \url{https://github.com/jheusser/satcoin}.
+
+% \section{Availability}
+% 
+% The source of \cbmc can be found at \url{https://github.com/diffblue/cbmc}.
+% For more details, please have a look at \url{http://www.cprover.org/cbmc/}.
+
+\bibliographystyle{IEEEtran}
+\bibliography{local}
+
+\end{document}
