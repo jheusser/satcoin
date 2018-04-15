@@ -108,6 +108,19 @@ int verifyhash(unsigned int *block)
   // set the nonce to a non-deterministic value
   *u_nonce = nondet_uint();
 
+#ifdef SATCNF
+  // make sure the valid nonce is in the range
+  unsigned nonce_start = 497822588 - SATCNF;
+  unsigned nonce_end = 497822588 + SATCNF;
+__CPROVER_assume(*u_nonce > nonce_start && *u_nonce < nonce_end); // used nonce should stay in the given range
+#else
+#ifdef UNSATCNF
+  // make sure the valid nonce is not in the range
+  unsigned nonce_start = 497822588;
+  unsigned nonce_end = nonce_start + UNSATCNF + UNSATCNF;
+__CPROVER_assume(*u_nonce > nonce_start && *u_nonce < nonce_end); // used nonce should stay in the given range
+#else
+
   /* =============================== GENESIS BLOCK ============================================= */
    //__CPROVER_assume(*u_nonce > 0 && *u_nonce < 10);
    __CPROVER_assume(*u_nonce > 497822587 && *u_nonce < 497822589); // 1 nonces only
@@ -118,6 +131,9 @@ int verifyhash(unsigned int *block)
   /* =============================== BLOCK 218430 ============================================== */
   //__CPROVER_assume(*u_nonce > 4043570728 && *u_nonce < 4043570731);
   /* =============================== BLOCK 218430 ============================================== */
+
+#endif // else UNSATCNF
+#endif // else SATCNF
 #endif
 
 	// The last 4 int's go together with some padding to make the second and final chunk.
