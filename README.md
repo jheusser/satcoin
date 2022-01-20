@@ -1,6 +1,6 @@
 # Satcoin
 
-This is code and CNF files for the [bitcoin mining using SAT solver article](http://jheusser.github.com/2013/02/03/satcoin.html).
+This is code and CNF files for the [bitcoin mining using SAT solver article](http://jheusser.github.io/2013/02/03/satcoin.html).
 
 
 ## Usage
